@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+import { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 const generateCode = () => {
@@ -11,6 +12,49 @@ const generateCode = () => {
 
   return code;
 };
+
+export const join = mutation({
+  args: {
+    joinCode: v.string(),
+    workspaceId: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const workspace = await ctx.db.get(args.workspaceId);
+
+    if (!workspace) {
+      throw new Error("Workspace not found");
+    }
+
+    if (workspace.joinCode !== args.joinCode.toLowerCase()) {
+      throw new Error("Invalid join code");
+    }
+
+    const existingMember = await ctx.db
+      .query("members")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.workspaceId).eq("userId", userId)
+      )
+      .unique();
+
+    if (existingMember) {
+      throw new Error("Already a member of this workspace");
+    }
+
+    await ctx.db.insert("members", {
+      userId,
+      workspaceId: workspace._id,
+      role: "member",
+    });
+
+    return workspace._id;
+  },
+});
 
 export const newJoinCode = mutation({
   args: {
@@ -94,7 +138,7 @@ export const get = query({
 
     const workspaceIds = members.map((member) => member.workspaceId);
 
-    const workspaces = [];
+    const workspaces: Doc<"workspaces">[] = [];
 
     for (const workspaceId of workspaceIds) {
       const workspace = await ctx.db.get(workspaceId);
@@ -108,8 +152,37 @@ export const get = query({
   },
 });
 
+export const getInfoById = query({
+  args: {
+    id: v.id("workspaces"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+
+    if (!userId) {
+      return null;
+    }
+
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_workspace_id_user_id", (q) =>
+        q.eq("workspaceId", args.id).eq("userId", userId)
+      )
+      .unique();
+
+    const workspace = await ctx.db.get(args.id);
+
+    return {
+      name: workspace?.name,
+      isMember: !!member,
+    };
+  },
+});
+
 export const getById = query({
-  args: { id: v.id("workspaces") },
+  args: {
+    id: v.id("workspaces"),
+  },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
 
