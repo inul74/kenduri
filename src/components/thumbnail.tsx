@@ -2,6 +2,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -26,6 +27,10 @@ export const Thumbnail = ({ url }: ThummbnailProps) => {
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-[800px] max-h-screen border-none bg-transparent p-2 shadow-none">
+        <DialogHeader>
+          <DialogTitle className="hidden"></DialogTitle>
+          <DialogDescription className="hidden"></DialogDescription>
+        </DialogHeader>
         <img
           src={url}
           alt="Message image"
