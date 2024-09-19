@@ -20,6 +20,7 @@ import { WorkspaceSection } from "./workspace-section";
 import { useMemberId } from "@/hooks/use-member-id";
 import { useChannelId } from "@/hooks/use-channel-id";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
+import { DevelopmentMode } from "@/components/development-mode";
 
 export const WorkspaceSidebar = () => {
   const memberId = useMemberId();
@@ -67,8 +68,22 @@ export const WorkspaceSidebar = () => {
         isAdmin={member.role === "admin"}
       />
       <div className="flex flex-col px-2 mt-3">
-        <SidebarItem id="threads" label="Threads" icon={MessageSquareText} />
-        <SidebarItem id="drafts" label="Drafts & Sent" icon={SendHorizontal} />
+        <DevelopmentMode>
+          <SidebarItem
+            id="threads"
+            label="Threads"
+            icon={MessageSquareText}
+            disabled
+          />
+        </DevelopmentMode>
+        <DevelopmentMode>
+          <SidebarItem
+            id="drafts"
+            label="Drafts & Sent"
+            icon={SendHorizontal}
+            disabled
+          />
+        </DevelopmentMode>
       </div>
       <WorkspaceSection
         label="Channels"
